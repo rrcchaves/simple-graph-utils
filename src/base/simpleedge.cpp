@@ -1,34 +1,40 @@
-#include "base/simplevertex.h"
+#include "base/simpleedge.h"
+#include <iostream>
 #include <iomanip>
-
+#include <sstream>
+#include <stdexcept>
+	
 namespace sg {
 
 //======================================================================================================================
-SimpleVertex::SimpleVertex(TVertexID id, const char * name, TWeight weight, TFlag flag) : mId(id), mName(std::string(name)), mWeight(weight), mFlag(flag) {
+SimpleEdge::SimpleEdge(TEdgeID id, const SimpleVertex & v1, const SimpleVertex & v2, TWeight weight, TFlag flag) : mId(id), mEnd1(v1), mEnd2(v2), mWeight(weight), mFlag(flag) {
+    validate();
 }
 
 //======================================================================================================================
-SimpleVertex::SimpleVertex(TVertexID id, const std::string & name, TWeight weight, TFlag flag) : mId(id), mName(name), mWeight(weight), mFlag(flag) {
+SimpleEdge::SimpleEdge(const SimpleEdge & other) : mId(other.mId), mEnd1(other.mEnd1), mEnd2(other.mEnd2), mWeight(other.mWeight), mFlag(other.mFlag) {
+    validate();
 }
 
 //======================================================================================================================
-SimpleVertex::SimpleVertex(const SimpleVertex & other) : mId(other.mId), mName(other.mName), mWeight(other.mWeight), mFlag(other.mFlag) {
+SimpleEdge::SimpleEdge(SimpleEdge && other) : mId(other.mId), mEnd1(other.mEnd1), mEnd2(other.mEnd2), mWeight(other.mWeight), mFlag(other.mFlag) {
+    validate();
 }
 
 //======================================================================================================================
-SimpleVertex::SimpleVertex(SimpleVertex && other): mId(other.mId), mName(other.mName), mWeight(other.mWeight), mFlag(other.mFlag) {
+SimpleEdge::~SimpleEdge() {
 }
 
 //======================================================================================================================
-SimpleVertex::~SimpleVertex() {
-}
-
-//======================================================================================================================
-void SimpleVertex::print(std::ostringstream & out) {
+void SimpleEdge::print(std::ostringstream & out) {
     out << "{ ";
     out << "id: " << mId;
     out << ", ";
-    out << "name: \"" << mName << "\"";
+    out << "end1: ";
+    mEnd1.print(out);
+    out << ", ";
+    out << "end2: ";
+    mEnd2.print(out);
     out << ", ";
     out << "weight: " << mWeight;
     out << ", ";
@@ -37,19 +43,30 @@ void SimpleVertex::print(std::ostringstream & out) {
 }
 
 //======================================================================================================================
-void SimpleVertex::swap(SimpleVertex & rhs) throw() {
+void SimpleEdge::swap(SimpleEdge & rhs) throw() {
     std::swap(mId, rhs.mId);
-    std::swap(mName, rhs.mName);
+    mEnd1.swap(rhs.mEnd1);
+    mEnd2.swap(rhs.mEnd2);
     std::swap(mWeight, rhs.mWeight);
     std::swap(mFlag, rhs.mFlag);
 }
 
 //======================================================================================================================
-bool operator == (const SimpleVertex & lhs, const SimpleVertex & rhs) {
-    //if (lhs.id() != rhs.id())  {
+void SimpleEdge::validate() {
+    if (mEnd1 == mEnd2) {
+        throw std::logic_error("SimpleEdge: edge with same ends is not allowed.");
+    }
+}
+
+//======================================================================================================================
+bool operator == (const SimpleEdge & lhs, const SimpleEdge & rhs) {
+    //if (lhs.id() != rhs.id()) {
     //    return false;
     //}
-    if (lhs.name() != rhs.name()) {
+    if (lhs.end1() != rhs.end1() && lhs.end1() != rhs.end2()) {
+        return false;
+    }
+    if (lhs.end2() != rhs.end2() && lhs.end2() != rhs.end1()) {
         return false;
     }
     if (lhs.weight() != rhs.weight()) {
@@ -62,7 +79,7 @@ bool operator == (const SimpleVertex & lhs, const SimpleVertex & rhs) {
 }
 
 //======================================================================================================================
-bool operator != (const SimpleVertex & lhs, const SimpleVertex & rhs) {
+bool operator != (const SimpleEdge & lhs, const SimpleEdge & rhs) {
     return !(lhs == rhs);
 }
 
